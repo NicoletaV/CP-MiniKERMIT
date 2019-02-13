@@ -1,0 +1,37 @@
+/* VINA NICOLETA 325CD */
+
+	In lib.h am codificat tipurile posibile de pachete si am adaugat 2 structuri:
+una specifica pachetului de tip S (data_S) si una ce inglobeaza campurile 
+dintr-un pachet (pkg).
+	Exista functiile get_pkg si get_msg in cele 2 fisiere ksender si kreceiver:
+get_pkg primeste datele necesare pentru a returna un pachet pkg (campul data va
+fi NULL pentru orice alt pachet inafara de F, D sau S, iar data_len este 
+dimensiunea campului data), iar get_msg pune informatiile din pachet in payload.
+	In kreceiver exista functia check, ce verifica daca informatia primita este
+corupta, recalculand crc-ul cu datele primite si comparandu-l cu cel vechi care
+fusese primit in payload.
+	In ksender este utilizata functia verify_timeout, care incearca sa trimita 
+un mesaj; acesta se va retrimite de maxim 3 ori; daca se primeste ack, se iese 
+din functie; daca nu a reusit sa se trimita, programul se opreste (timeout). 
+Asemanator, in kreceiver exista wait_message, ce asteapta de maxim 3 ori primirea
+unui mesaj, trimitand ack sau nack in functie de caz. Parametrul dec are valoarea
+1 doar in cazul pachetului S, ca sa se stie sa nu se retrimita nimic inapoi. 
+Aceste doua functii sunt folosite ori de cate ori trebuie sa se trimita sau 
+primeasca mesaje, astfel verificarea de timeout se face pentru toate pachetele.
+	In ksender se formeaza un pachet de tip S si se trimite, actualizand seq_no;
+apoi in cadrul for-ului, pentru fiecare fisier de intrare, se formeaza pachet si 
+apoi mesaj de tip F, se trimite, se deschide fisierul pentru citire si in while
+se citesc si se trimit bucati de cate 249 (pachete de tip Data), pana la EOF. 
+Cand s-a ajuns aici (functia fread intoarce 0), se inchide fisierul curent si se
+trece la urmatorul fisier. La iesirea din for, se transmite pachetul de tip EOT
+si programul se incheie.
+	In kreceiver se primeste prima oara pachetul de tip S si apoi in while, cat
+timp nu se primeste EOT (pachet tip B), se prelucreaza fiecare fisier: se 
+formeaza numele lui si se deschide, iar in while-ul interior are loc scrierea
+in fisier a campului data din cadrul pachetelor de tip Data primite. Daca se 
+primeste pachet de tip Z, fisierul se inchide si se trece la urmatorul (datele 
+au lungimea egala cu (ar->len - 5), intrucat in campul len din msg am salvat doar
+aceasta dimensiune). Cand kreceiver primeste EOT, programul se incheie.
+
+PS: Am utilizat fisierele binare file1.bin, file2.bin si file3.bin, iar rularea 
+run_experiment.sh dureaza aproximativ 2-3 minute, fisierele trimitandu-se integral.
